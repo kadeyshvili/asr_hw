@@ -28,6 +28,7 @@ class BaseTrainer:
         dataloaders,
         logger,
         writer,
+        use_beam_search=False,
         epoch_len=None,
         skip_oom=True,
         batch_transforms=None,
@@ -58,6 +59,7 @@ class BaseTrainer:
                 tensor name.
         """
         self.is_train = True
+        self.use_beam_search = use_beam_search
 
         self.config = config
         self.cfg_trainer = self.config.trainer

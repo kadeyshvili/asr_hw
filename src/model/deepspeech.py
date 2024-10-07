@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class BNReluRNN(nn.Module):
+class RnnReluBlock(nn.Module):
     supported_rnns = {
         'lstm': nn.LSTM,
         'gru': nn.GRU,
@@ -18,9 +18,8 @@ class BNReluRNN(nn.Module):
             rnn_type: str = 'gru',
             bidirectional: bool = True,
             dropout: float = 0.1,
-            apply_batch_norm: bool = True,
     ):
-        super(BNReluRNN, self).__init__()
+        super(RnnReluBlock, self).__init__()
         self.hidden_size = hidden_size
         self.batch_norm = nn.BatchNorm1d(input_size)
         rnn_cell = self.supported_rnns[rnn_type]
@@ -79,13 +78,12 @@ class DeepSpeech2(nn.Module):
         self.rnn = nn.ModuleList()
         for i in range(num_rnn_layers):
             self.rnn.append(
-                BNReluRNN(
+                RnnReluBlock(
                     input_size=input_size if i == 0 else hidden_size,
                     hidden_size=hidden_size,
                     rnn_type=rnn_type,
                     bidirectional=bidirectional,
                     dropout=dropout,
-                    apply_batch_norm=True,
                 )
             )
         self.batch_norm = nn.BatchNorm1d(hidden_size)

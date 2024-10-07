@@ -6,6 +6,8 @@ from src.logger.utils import plot_spectrogram
 from src.metrics.tracker import MetricTracker
 from src.metrics.utils import calc_cer, calc_wer
 from src.trainer.base_trainer import BaseTrainer
+import torch
+import wandb
 
 
 class Trainer(BaseTrainer):
@@ -101,23 +103,46 @@ class Trainer(BaseTrainer):
             inds[: int(ind_len)]
             for inds, ind_len in zip(argmax_inds, log_probs_length.numpy())
         ]
+        probs = torch.exp(log_probs).cpu().numpy()
+        probs_cropped = [prob[:log_prob_length, :] for prob, log_prob_length in zip(probs, log_probs_length.numpy())]
         argmax_texts_raw = [self.text_encoder.decode(inds) for inds in argmax_inds]
         argmax_texts = [self.text_encoder.ctc_decode(inds) for inds in argmax_inds]
-        tuples = list(zip(argmax_texts, text, argmax_texts_raw, audio_path))
-
+        if self.use_beam_search:
+            beam_search_texts = [self.text_encoder.ctc_beam_search(prob_cropped)[0].hypo for prob_cropped in probs_cropped]
+        else:
+            beam_search_texts = ["" for _ in range(len(probs_cropped))]
+        tuples = list(zip(argmax_texts, text, beam_search_texts, argmax_texts_raw, audio_path))
         rows = {}
-        for pred, target, raw_pred, audio_path in tuples[:examples_to_log]:
+        for pred, target, beam_search_text, raw_pred, audio_path in tuples[:examples_to_log]:
             target = self.text_encoder.normalize_text(target)
             wer = calc_wer(target, pred) * 100
             cer = calc_cer(target, pred) * 100
 
-            rows[Path(audio_path).name] = {
-                "target": target,
-                "raw prediction": raw_pred,
-                "predictions": pred,
-                "wer": wer,
-                "cer": cer,
-            }
+            if self.use_beam_search:
+                wer_beam_search = calc_wer(target, beam_search_text) * 100
+                cer_beam_search = calc_cer(target, beam_search_text) * 100
+
+                rows[Path(audio_path).name] = {
+                    "target": target,
+                    "raw prediction": raw_pred,
+                    "predictions": pred,
+                    "predictions beam search": beam_search_text,
+                    "audio" :  wandb.Audio(audio_path),
+                    "wer": wer,
+                    "cer": cer,
+                    "wer beam search": wer_beam_search, 
+                    "cer beam search": cer_beam_search, 
+                }
+            else:
+                rows[Path(audio_path).name] = {
+                    "target": target,
+                    "raw prediction": raw_pred,
+                    "predictions": pred,
+                    "audio" :  wandb.Audio(audio_path),
+                    "wer": wer,
+                    "cer": cer,
+                }
+
         self.writer.add_table(
             "predictions", pd.DataFrame.from_dict(rows, orient="index")
         )
