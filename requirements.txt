@@ -13,6 +13,7 @@ hydra-core
 editdistance
 wget
 pyctcdecode
+kenlm
 
 black
 isort
