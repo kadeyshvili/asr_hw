@@ -26,8 +26,8 @@ text_encoder:
   use_lm: True
 trainer:
   log_step: 20
-  n_epochs: 20
-  epoch_len: 100
+  n_epochs: 50
+  epoch_len: 200
   use_beam_search: False
   use_module_beam_search: True
   max_grad_norm: 10
