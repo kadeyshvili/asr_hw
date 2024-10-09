@@ -31,6 +31,7 @@ trainer:
   epoch_len: 100
   use_beam_search: False
   use_module_beam_search: True
+  max_grad_norm: 10
   device_tensors: ["spectrogram", "text_encoded"] # which tensors should be on device (ex. GPU)
   resume_from: null # null or path to the checkpoint dir with *.pth and config.yaml
   device: auto # device name or "auto"
