@@ -97,7 +97,7 @@ class Trainer(BaseTrainer):
         # TODO add beam search
         # Note: by improving text encoder and metrics design
         # this logging can also be improved significantly
-
+        all_audios = batch['audio']
         argmax_inds = log_probs.cpu().argmax(-1).numpy()
         argmax_inds = [
             inds[: int(ind_len)]
@@ -108,17 +108,19 @@ class Trainer(BaseTrainer):
         argmax_texts_raw = [self.text_encoder.decode(inds) for inds in argmax_inds]
         argmax_texts = [self.text_encoder.ctc_decode(inds) for inds in argmax_inds]
         if self.use_beam_search:
-            beam_search_texts = [self.text_encoder.ctc_beam_search(prob_cropped)[0].hypo for prob_cropped in probs_cropped]
+            beam_search_texts = [self.text_encoder.ctc_beam_search(prob_cropped)[0][0] for prob_cropped in probs_cropped]
+        elif self.use_module_beam_search:
+            beam_search_texts = [self.text_encoder.ctc_beam_search_module(prob_cropped)[0] for prob_cropped in probs_cropped]
         else:
             beam_search_texts = ["" for _ in range(len(probs_cropped))]
-        tuples = list(zip(argmax_texts, text, beam_search_texts, argmax_texts_raw, audio_path))
+        tuples = list(zip(argmax_texts, text, beam_search_texts, argmax_texts_raw, audio_path, all_audios))
         rows = {}
-        for pred, target, beam_search_text, raw_pred, audio_path in tuples[:examples_to_log]:
+        for pred, target, beam_search_text, raw_pred, audio_path, audio in tuples[:examples_to_log]:
             target = self.text_encoder.normalize_text(target)
             wer = calc_wer(target, pred) * 100
             cer = calc_cer(target, pred) * 100
 
-            if self.use_beam_search:
+            if self.use_beam_search or self.use_module_beam_search:
                 wer_beam_search = calc_wer(target, beam_search_text) * 100
                 cer_beam_search = calc_cer(target, beam_search_text) * 100
 
@@ -127,7 +129,8 @@ class Trainer(BaseTrainer):
                     "raw prediction": raw_pred,
                     "predictions": pred,
                     "predictions beam search": beam_search_text,
-                    "audio" :  wandb.Audio(audio_path),
+                    "initial audio" :  self.writer.wandb.Audio(audio_path),
+                    "audio" : self.writer.wandb.Audio(audio.squeeze().numpy(), sample_rate=16000),
                     "wer": wer,
                     "cer": cer,
                     "wer beam search": wer_beam_search, 
@@ -138,7 +141,8 @@ class Trainer(BaseTrainer):
                     "target": target,
                     "raw prediction": raw_pred,
                     "predictions": pred,
-                    "audio" :  wandb.Audio(audio_path),
+                    "initial audio" :  self.writer.wandb.Audio(audio_path),
+                    "audio" : self.writer.wandb.Audio(audio.squeeze().numpy(), sample_rate=16000),
                     "wer": wer,
                     "cer": cer,
                 }

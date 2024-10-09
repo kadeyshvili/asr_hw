@@ -29,6 +29,7 @@ class BaseTrainer:
         logger,
         writer,
         use_beam_search=False,
+        use_module_beam_search=False,
         epoch_len=None,
         skip_oom=True,
         batch_transforms=None,
@@ -60,6 +61,7 @@ class BaseTrainer:
         """
         self.is_train = True
         self.use_beam_search = use_beam_search
+        self.use_module_beam_search = use_module_beam_search
 
         self.config = config
         self.cfg_trainer = self.config.trainer

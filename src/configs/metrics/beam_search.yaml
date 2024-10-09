@@ -1,6 +1,10 @@
 train: [] # metrics that are calculated during training
 inference: # metrics that are calculated during inference (eval)
   - _target_: src.metrics.BeamSearchCERMetric
+    use_module_decoder: True
+    beam_size: 50
     name: "CER_(BeamSearch)" # it is better to avoid spaces in names
   - _target_: src.metrics.BeamSearchWERMetric
+    use_module_decoder: True
+    beam_size: 50
     name: "WER_(BeamSearch)"

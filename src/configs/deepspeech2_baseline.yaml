@@ -1,17 +1,18 @@
 defaults:
   - model: deepspeech2_baseline
   - writer: wandb
-  - metrics: example
+  - metrics: beam_search
   - datasets: example
   - dataloader: example
   - transforms: example_only_instance
   - _self_
 optimizer:
-  _target_: torch.optim.AdamW
-  lr: 3e-4
+  _target_: torch.optim.SGD
+  lr: 1e-4
+  momentum: 0.99
 lr_scheduler:
   _target_: torch.optim.lr_scheduler.OneCycleLR
-  max_lr: 1e-2
+  max_lr: 6e-4
   pct_start: 0.1
   steps_per_epoch: ${trainer.epoch_len}
   epochs: ${trainer.n_epochs}
@@ -20,17 +21,22 @@ loss_function:
   _target_: src.loss.CTCLossWrapper
 text_encoder:
   _target_: src.text_encoder.CTCTextEncoder
+  model_path: /Users/polinakadeyshvili/AMI/4_course/dla/hws/asr_hw/3-gram.pruned.1e-7.arpa
+  vocab_path: /Users/polinakadeyshvili/AMI/4_course/dla/hws/asr_hw/librispeech-vocab.txt
+  lm_path: '/Users/polinakadeyshvili/AMI/4_course/dla/hws/asr_hw/lowercase_3-gram.pruned.1e-7.arpa'
+  use_lm: True
 trainer:
-  log_step: 40
-  n_epochs: 100
-  epoch_len: 200
+  log_step: 20
+  n_epochs: 20
+  epoch_len: 100
   use_beam_search: False
+  use_module_beam_search: True
   device_tensors: ["spectrogram", "text_encoded"] # which tensors should be on device (ex. GPU)
   resume_from: null # null or path to the checkpoint dir with *.pth and config.yaml
   device: auto # device name or "auto"
   override: True # if True, will override the previous run with the same name
-  monitor: "min val_WER_(Argmax)" # "off" or "max/min metric_name", i.e. our goal is to maximize/minimize metric
+  monitor: "min val_WER_(BeamSearch)" # "off" or "max/min metric_name", i.e. our goal is to maximize/minimize metric
   save_period: 5 # checkpoint each save_period epochs in addition to the best epoch
   early_stop: ${trainer.n_epochs} # epochs for early stopping
   save_dir: "saved"
-  seed: 1
+  seed: 52

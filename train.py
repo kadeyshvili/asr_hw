@@ -79,6 +79,7 @@ def main(config):
         writer=writer,
         batch_transforms=batch_transforms,
         use_beam_search=config['trainer'].get("use_beam_search", False),
+        use_module_beam_search=config['trainer'].get('use_module_beam_search', False),
         skip_oom=config.trainer.get("skip_oom", True),
     )
 

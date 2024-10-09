@@ -3,7 +3,9 @@ from string import ascii_lowercase
 
 import torch
 from collections import defaultdict
-from typing import NamedTuple
+from pyctcdecode import BeamSearchDecoderCTC, Alphabet, LanguageModel
+import kenlm
+import os
 
 # TODO add CTC decode
 # TODO add BPE, LM, Beam Search support
@@ -11,14 +13,10 @@ from typing import NamedTuple
 # The design can be remarkably improved
 # to calculate stuff more efficiently and prettier
 
-class PredictedHypo(NamedTuple):
-    hypo: str
-    proba: float
 
 class CTCTextEncoder:
     EMPTY_TOK = ""
-
-    def __init__(self, alphabet=None, **kwargs):
+    def __init__(self, use_lm=False, vocab_path=None, model_path=None,lm_path=None, alphabet=None, **kwargs):
         """
         Args:
             alphabet (list): alphabet for language. If None, it will be
@@ -33,6 +31,25 @@ class CTCTextEncoder:
 
         self.ind2char = dict(enumerate(self.vocab))
         self.char2ind = {v: k for k, v in self.ind2char.items()}
+        if not use_lm:
+            language_model = None
+        else:
+            with open(vocab_path) as f:
+                unigram_list = [t.lower() for t in f.read().strip().split("\n")]
+            alpha = 0.5
+            beta = 1.5
+            lm_path = lm_path
+            if not os.path.exists(lm_path):
+                with open(model_path, 'r') as f_upper:
+                    print(f_upper)
+                    with open(lm_path, 'w') as f_lower:
+                        for line in f_upper:
+                            f_lower.write(line.lower())
+
+            kenlm_model = kenlm.Model(lm_path)
+
+            language_model = LanguageModel(kenlm_model=kenlm_model, unigrams=unigram_list, alpha=alpha, beta=beta)
+        self.decoder = BeamSearchDecoderCTC(alphabet=Alphabet(labels=self.vocab, is_bpe=False), language_model=language_model)
 
     def __len__(self):
         return len(self.vocab)
@@ -100,9 +117,12 @@ class CTCTextEncoder:
         for prob in probs:
             dp = self.expand_and_merge_path(dp, prob)
             dp = self.truncate_paths(dp, beam_size)
-        dp = [PredictedHypo(prefix, proba) for (prefix, _), proba in sorted(dp.items(), key=lambda x : -x[1])]
+        dp = [(prefix, proba) for (prefix, _), proba in sorted(dp.items(), key=lambda x : -x[1])]
         return dp
-
+ 
+    def ctc_beam_search_module(self, probs, beam_width=10):
+        return [self.decoder.decode(probs, beam_width)]
+    
     @staticmethod
     def normalize_text(text: str):
         text = text.lower()
