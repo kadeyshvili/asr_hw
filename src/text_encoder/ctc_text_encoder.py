@@ -6,6 +6,7 @@ from collections import defaultdict
 from pyctcdecode import BeamSearchDecoderCTC, Alphabet, LanguageModel
 import kenlm
 import os
+import numpy as np
 
 # TODO add CTC decode
 # TODO add BPE, LM, Beam Search support
@@ -41,7 +42,6 @@ class CTCTextEncoder:
             lm_path = lm_path
             if not os.path.exists(lm_path):
                 with open(model_path, 'r') as f_upper:
-                    print(f_upper)
                     with open(lm_path, 'w') as f_lower:
                         for line in f_upper:
                             f_lower.write(line.lower())
@@ -113,6 +113,7 @@ class CTCTextEncoder:
         return dict(sorted(list(dp.items()), key = lambda x : -x[1])[:beam_size])
 
     def ctc_beam_search(self, probs, beam_size=10):
+        probs = np.exp(probs)
         dp = {('', self.EMPTY_TOK) : 1.0, }
         for prob in probs:
             dp = self.expand_and_merge_path(dp, prob)

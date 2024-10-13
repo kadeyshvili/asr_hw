@@ -2,17 +2,16 @@ train:
   get_spectrogram: # special key for getting spectrogram
     _target_: torchaudio.transforms.MelSpectrogram
     sample_rate: 16000
-  spectrogram:
-    _target_: src.transforms.RandomApply
-    augmentation:
-      - _target_: src.transforms.spec_augs.TimeMasking
-        p: 1
-        time_mask_param: 40
   audio: # name of the tensor on which we apply transform
     _target_: torchvision.transforms.v2.Compose
     transforms:
-      - _target_: src.transforms.wav_augs.AddColoredNoise
+      - _target_: src.transforms.wav_augs.LowPassFilter
+        p: 1.
+        max_cutoff_freq: 2200
+        min_cutoff_freq: 900
         sample_rate: 16000
+
+
 inference:
   get_spectrogram:
     _target_: torchaudio.transforms.MelSpectrogram

@@ -2,7 +2,7 @@ defaults:
   - model: deepspeech2_baseline
   - writer: wandb
   - metrics: beam_search
-  - datasets: example
+  - datasets: all_data_other
   - dataloader: example
   - transforms: example_only_instance
   - _self_
@@ -20,23 +20,23 @@ loss_function:
   _target_: src.loss.CTCLossWrapper
 text_encoder:
   _target_: src.text_encoder.CTCTextEncoder
-  model_path: /Users/polinakadeyshvili/AMI/4_course/dla/hws/asr_hw/3-gram.pruned.1e-7.arpa
-  vocab_path: /Users/polinakadeyshvili/AMI/4_course/dla/hws/asr_hw/librispeech-vocab.txt
-  lm_path: '/Users/polinakadeyshvili/AMI/4_course/dla/hws/asr_hw/lowercase_3-gram.pruned.1e-7.arpa'
+  model_path: /home/makarovan/asr_hw/3-gram.pruned.1e-7.arpa
+  vocab_path: /home/makarovan/asr_hw/librispeech-vocab.txt
+  lm_path: /home/makarovan/asr_hw/lowercase_3-gram.pruned.1e-7.arpa
   use_lm: True
 trainer:
-  log_step: 20
-  n_epochs: 50
-  epoch_len: 200
+  log_step: 100
+  n_epochs: 100
+  epoch_len: 500
   use_beam_search: False
   use_module_beam_search: True
   max_grad_norm: 10
   device_tensors: ["spectrogram", "text_encoded"] # which tensors should be on device (ex. GPU)
   resume_from: null # null or path to the checkpoint dir with *.pth and config.yaml
-  device: auto # device name or "auto"
+  device:  'cuda:5' # device name or "auto"
   override: True # if True, will override the previous run with the same name
   monitor: "min val_WER_(BeamSearch)" # "off" or "max/min metric_name", i.e. our goal is to maximize/minimize metric
   save_period: 5 # checkpoint each save_period epochs in addition to the best epoch
   early_stop: ${trainer.n_epochs} # epochs for early stopping
-  save_dir: "saved"
+  save_dir: "saved_all_data_more_layers_more_epochs"
   seed: 52
