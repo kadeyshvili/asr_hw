@@ -1,6 +1,9 @@
 import torch
 from tqdm.auto import tqdm
 
+from src.utils.io_utils import write_json
+from pathlib import Path
+
 from src.metrics.tracker import MetricTracker
 from src.trainer.base_trainer import BaseTrainer
 
@@ -148,6 +151,7 @@ class Inferencer(BaseTrainer):
             log_probs_length = batch["log_probs_length"][i].clone()
             lengths = log_probs_length.detach().numpy()
             text = batch['text'][i]
+            audio_path = batch['audio_path'][i]
             pred_text = self.text_encoder.ctc_beam_search_module(log_probs[:lengths], beam_width=10)[0]
 
             output_id = current_id + i
@@ -158,8 +162,7 @@ class Inferencer(BaseTrainer):
             }
 
             if self.save_path is not None:
-                # you can use safetensors or other lib here
-                torch.save(output, self.save_path / part / f"output_{output_id}.pth")
+                write_json(output, self.save_path / part /f"output_{str(Path(audio_path).stem)}.json")
 
         return batch
 
