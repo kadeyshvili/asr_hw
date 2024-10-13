@@ -1,6 +1,6 @@
 defaults:
   - model: deepspeech2_baseline
-  - metrics: example
+  - metrics: beam_search
   - datasets: example_eval # we do not want to run inference on training data
   - dataloader: example
   - transforms: example_only_instance
@@ -16,4 +16,4 @@ inferencer:
   device: auto # device name or "auto"
   save_path: "final_model_inference" # any name here, can be a dataset name
   seed: 1
-  from_pretrained: "saved_all_data_more_layers_more_epochs/all_data_more_layers_more_epochs/model_best.pth" # path to the pretrained model
+  from_pretrained: "saved/saved_all_data_more_layers_more_epochs/all_data_more_layers_more_epochs/model_best.pth" # path to the pretrained model
