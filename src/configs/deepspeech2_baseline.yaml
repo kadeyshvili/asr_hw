@@ -20,9 +20,9 @@ loss_function:
   _target_: src.loss.CTCLossWrapper
 text_encoder:
   _target_: src.text_encoder.CTCTextEncoder
-  model_path: /home/makarovan/asr_hw/3-gram.pruned.1e-7.arpa
-  vocab_path: /home/makarovan/asr_hw/librispeech-vocab.txt
-  lm_path: /home/makarovan/asr_hw/lowercase_3-gram.pruned.1e-7.arpa
+  model_path: 3-gram.pruned.1e-7.arpa
+  vocab_path: librispeech-vocab.txt
+  lm_path: lowercase_3-gram.pruned.1e-7.arpa
   use_lm: True
 trainer:
   log_step: 100
