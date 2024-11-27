@@ -1,4 +1,5 @@
 from pathlib import Path
+import torchaudio
 
 from src.datasets.base_dataset import BaseDataset
 
@@ -10,11 +11,16 @@ class CustomDirAudioDataset(BaseDataset):
             entry = {}
             if path.suffix in [".mp3", ".wav", ".flac", ".m4a"]:
                 entry["path"] = str(path)
+                file_info = torchaudio.info(str(path))
+                length = file_info.num_frames / file_info.sample_rate
+                entry["audio_len"] = length
                 if transcription_dir and Path(transcription_dir).exists():
                     transc_path = Path(transcription_dir) / (path.stem + ".txt")
                     if transc_path.exists():
                         with transc_path.open() as f:
                             entry["text"] = f.read().strip()
+                else:
+                    entry["text"] = "-"
             if len(entry) > 0:
                 data.append(entry)
         super().__init__(data, *args, **kwargs)
